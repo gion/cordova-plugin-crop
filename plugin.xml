@@ -1,96 +1,70 @@
-package com.gion.crop;
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  id="cordova-plugin-crop"
+  version="0.1.0">
 
-import android.app.Activity;
-import android.content.Intent;
-import android.net.Uri;
-import android.os.Environment;
+  <name>CropPlugin</name>
 
-import com.soundcloud.android.crop.Crop;
+  <description>
+    Crop an image in a Cordova app
+  </description>
 
-import org.apache.cordova.CallbackContext;
-import org.apache.cordova.CordovaPlugin;
-import org.apache.cordova.PluginResult;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+  <license>MIT</license>
 
-import java.io.File;
+  <engines>
+    <engine name="cordova-android" version=">=4.0.0" />
+    <engine name="cordova-ios" version=">=3.5.0" />
+  </engines>
 
-public class CropPlugin extends CordovaPlugin {
-    private CallbackContext callbackContext;
-    private Uri inputUri;
-    private Uri outputUri;
+  <js-module src="www/crop.js" name="CropPlugin">
+    <clobbers target="plugins.crop" />
+  </js-module>
 
-    @Override
-    public boolean execute(String action, JSONArray args, final CallbackContext callbackContext) throws JSONException {
-      if (action.equals("cropImage")) {
-          String imagePath = args.getString(0);
+  <!-- ios -->
+  <platform name="ios">
+    <config-file target="config.xml" parent="/*">
+      <feature name="CropPlugin">
+        <param name="ios-package" value="CTCrop"/>
+      </feature>
+    </config-file>
 
-          this.inputUri = Uri.parse(imagePath);
-          this.outputUri = Uri.fromFile(new File(getTempDirectoryPath() + "/cropped.jpg"));
+    <header-file src="src/ios/CTCrop.h" />
+    <source-file src="src/ios/CTCrop.m" />
+    <header-file src="src/ios/Lib/PECropRectView.h" />
+    <source-file src="src/ios/Lib/PECropRectView.m" />
+    <header-file src="src/ios/Lib/PECropView.h" />
+    <source-file src="src/ios/Lib/PECropView.m" />
+    <header-file src="src/ios/Lib/PECropViewController.h" />
+    <source-file src="src/ios/Lib/PECropViewController.m" />
+    <header-file src="src/ios/Lib/PEResizeControl.h" />
+    <source-file src="src/ios/Lib/PEResizeControl.m" />
+    <header-file src="src/ios/Lib/UIImage+PECrop.h" />
+    <source-file src="src/ios/Lib/UIImage+PECrop.m" />
+    <resource-file src="src/ios/Lib/PEPhotoCropEditor.bundle" />
 
-          PluginResult pr = new PluginResult(PluginResult.Status.NO_RESULT);
-          pr.setKeepCallback(true);
-          callbackContext.sendPluginResult(pr);
-          this.callbackContext = callbackContext;
+    <framework src="QuartzCore.framework" />
+    <framework src="AVFoundation.framework" />
+  </platform>
 
-          cordova.setActivityResultCallback(this);
-          Crop.of(this.inputUri, this.outputUri)
-                //   .asSquare()
-                  .withAspect(18, 10)
-                  .start(cordova.getActivity());
-          return true;
-      }
-      return false;
-    }
+  <!-- android -->
+  <platform name="android">
+    <config-file target="res/xml/config.xml" parent="/*">
+      <feature name="CropPlugin">
+        <param name="android-package" value="com.gion.crop.CropPlugin"/>
+      </feature>
+    </config-file>
 
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent intent) {
-        if (requestCode == Crop.REQUEST_CROP) {
-            if (resultCode == Activity.RESULT_OK) {
-                Uri imageUri = Crop.getOutput(intent);
-                this.callbackContext.success("file://" + imageUri.getPath() + "?" + System.currentTimeMillis());
-                this.callbackContext = null;
-            } else if (resultCode == Crop.RESULT_ERROR) {
-                try {
-                    JSONObject err = new JSONObject();
-                    err.put("message", "Error on cropping");
-                    err.put("code", String.valueOf(resultCode));
-                    this.callbackContext.error(err);
-                    this.callbackContext = null;
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-            } else if (resultCode == Activity.RESULT_CANCELED) {
-                try {
-                    JSONObject err = new JSONObject();
-                    err.put("message", "User cancelled");
-                    err.put("code", "userCancelled");
-                    this.callbackContext.error(err);
-                    this.callbackContext = null;
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        super.onActivityResult(requestCode, resultCode, intent);
-    }
+    <framework src="com.soundcloud.android:android-crop:1.0.0@aar" />
 
-    private String getTempDirectoryPath() {
-        File cache = null;
+    <config-file target="AndroidManifest.xml" parent="/manifest/application">
+      <activity android:name="com.soundcloud.android.crop.CropImageActivity" />
+    </config-file>
 
-        // SD Card Mounted
-        if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-            cache = new File(Environment.getExternalStorageDirectory().getAbsolutePath() +
-                    "/Android/data/" + cordova.getActivity().getPackageName() + "/cache/");
-        }
-        // Use internal storage
-        else {
-            cache = cordova.getActivity().getCacheDir();
-        }
+    <config-file target="AndroidManifest.xml" parent="/manifest">
+        <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    </config-file>
 
-        // Create the cache directory if it doesn't exist
-        cache.mkdirs();
-        return cache.getAbsolutePath();
-    }
-}
+    <source-file src="src/android/CropPlugin.java" target-dir="src/com/gion/crop" />
+  </platform>
+</plugin>
