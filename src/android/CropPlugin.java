@@ -1,4 +1,4 @@
-package com.jeduan.crop;
+package com.gion.crop;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -36,7 +36,8 @@ public class CropPlugin extends CordovaPlugin {
 
           cordova.setActivityResultCallback(this);
           Crop.of(this.inputUri, this.outputUri)
-                  .asSquare()
+                //   .asSquare()
+                  .withAspect(18, 10)
                   .start(cordova.getActivity());
           return true;
       }
